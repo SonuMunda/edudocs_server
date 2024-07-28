@@ -1,26 +1,35 @@
-const mongoose = require(mongoose);
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
   username: {
     type: String,
-    require: true,
+    required: true,
   },
   firstName: {
     type: String,
-    require: true,
+    required: true,
   },
   lastName: {
     type: String,
-    require: false,
+    required: false,
   },
   email: {
     type: String,
-    require: true,
+    required: true,
   },
   password: {
     type: String,
-    require: true,
+    required: true,
+  },
+  profile_image: {
+    type: String,
+    required: false,
+  },
+  emailVerified: {
+    type : Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,
@@ -29,10 +38,22 @@ const userSchema = new Schema({
   uploads: [
     {
       type: Schema.Types.ObjectId,
-      ref: "Uploads",
+      ref: "userUploads",
     },
   ],
 });
 
+// Method to generate hashed password
+userSchema.statics.generateHashPassword = function (password) {
+  const saltRounds = 10;
+  try {
+    const hashedPassword = bcrypt.hash(password, saltRounds);
+    return hashedPassword;
+  } catch (err) {
+    console.error(err.message);
+  }
+};
+
+// Create and export the model
 const User = mongoose.model("User", userSchema);
 module.exports = User;
