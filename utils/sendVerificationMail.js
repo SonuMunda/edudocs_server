@@ -32,7 +32,7 @@ const sendVerificationMail = async (user) => {
             <h2 style="color: #2c3e50;">Welcome to Edudocs!</h2>
             <p>Thank you for signing up with Edudocs!</p>
             <p>Please verify your email address by clicking the link below:</p>
-            <p style="text-align: center;">
+            <p style="text-align: center; margin : 1rem">
               <a href="${link}" target="_blank" style="background-color: #3498db; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">Verify Email</a>
             </p>
             <p>This link will expire in 1 hour.</p>
