@@ -28,7 +28,7 @@ const userSchema = new Schema({
     required: false,
   },
   emailVerified: {
-    type : Boolean,
+    type: Boolean,
     default: false,
   },
   createdAt: {
@@ -51,6 +51,16 @@ userSchema.statics.generateHashPassword = function (password) {
     return hashedPassword;
   } catch (err) {
     console.error(err.message);
+  }
+};
+
+//Password match function
+userSchema.methods.comparePassword = async function (password) {
+  try {
+    const isMatch = await bcrypt.compare(password, this.password);
+    return isMatch;
+  } catch (error) {
+    throw error;
   }
 };
 

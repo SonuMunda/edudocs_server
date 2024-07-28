@@ -1,7 +1,7 @@
 const User = require("../models/userModel");
 const generateToken = require("../utils/generateToken");
 const sendVerificationMail = require("../utils/sendVerificationMail");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
 const home = (req, res) => {
   res.send("Hello");
@@ -15,10 +15,8 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const usernameCheck = await User.findOne({ username: username });
-    const emailCheck = await User.findOne({ email: email });
-
-    if (usernameCheck || emailCheck) {
+    const isUserExists = await User.findOne({ $or: [{ email }, { username }] });
+    if (isUserExists) {
       return res
         .status(400)
         .json({ message: "Username or Email already in use" });
@@ -41,7 +39,7 @@ const signup = async (req, res) => {
     const token = generateToken(user);
     res.status(201).json({
       message: "Account created Successfully",
-      user: user,
+      user: user.username,
       token: token,
     });
   } catch (error) {
@@ -82,4 +80,38 @@ const verifyMail = async (req, res) => {
   }
 };
 
-module.exports = { home, signup, verifyMail };
+const signin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log(email, password);
+    if (!email || !password) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isPasswordMatched = await user.comparePassword(password);
+    if (!isPasswordMatched) {
+      return res
+        .status(401)
+        .json({ message: "Authentication failed. Wrong password." });
+    }
+
+    const token = generateToken(user);
+    res.status(200).json({
+      message: "Signin Successful",
+      user: user.username,
+      token: token,
+    });
+  } catch (error) {
+    console.error("Error during signin:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports = { home, signup, verifyMail, signin };
