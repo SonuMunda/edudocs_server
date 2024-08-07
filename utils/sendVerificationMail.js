@@ -54,6 +54,7 @@ const sendVerificationMail = async (user) => {
       message:
         "Verification link has been sent to your email. Please verify it. If not found in the inbox, check the spam folder.",
     };
+    
   } catch (error) {
     console.error("Error sending email:", error);
     return {

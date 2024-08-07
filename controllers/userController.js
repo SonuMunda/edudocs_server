@@ -11,48 +11,46 @@ const signup = async (req, res) => {
   try {
     const { username, firstName, lastName, email, password } = req.body;
 
-    if (!username || !firstName || !lastName || !email || !password) {
+    if (!username || !firstName || !email || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const isUserExists = await User.findOne({ $or: [{ email }, { username }] });
-    if (isUserExists) {
-      return res
-        .status(400)
-        .json({ message: "Username or Email already in use" });
-    }
+    const existingUser = await User.findOne({
+      $or: [{ username: username }, { email: email }],
+    });
 
-    const hashedPassword = await User.generateHashPassword(password);
+    if (existingUser) {
+      if (existingUser.username === username) {
+        return res.status(400).json({ message: "Username already in use" });
+      }
+      if (existingUser.email === email) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+    }
 
     const user = new User({
       username,
       firstName,
       lastName,
       email,
-      password: hashedPassword,
+      password,
     });
 
-    await user.save();
+    await Promise.all([user.save(), sendVerificationMail(user)]);
 
-    await sendVerificationMail(user);
-
-    const token = generateToken(user);
-    res.status(201).json({
-      message: "Account created Successfully",
-      user: user.username,
-      token: token,
-    });
+    return res
+      .status(201)
+      .json({ message: "Verification email sent to your email" });
   } catch (error) {
     console.error("Error during signup:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+module.exports = signup;
+
 const verifyMail = async (req, res) => {
   const { id, token } = req.params;
-
-  // res.send("Hello");
-  // console.log(id);
 
   try {
     const user = await User.findOne({ _id: id });
@@ -68,9 +66,7 @@ const verifyMail = async (req, res) => {
     console.log("Before update:", user);
 
     user.emailVerified = true;
-    const updatedUser = await user.save();
-
-    console.log("After update:", updatedUser);
+    await user.save();
 
     return res.status(200).json({ message: "Email verified successfully" });
   } catch (error) {
@@ -97,15 +93,12 @@ const signin = async (req, res) => {
 
     const isPasswordMatched = await user.comparePassword(password);
     if (!isPasswordMatched) {
-      return res
-        .status(401)
-        .json({ message: "Authentication failed. Wrong password." });
+      return res.status(401).json({ message: "Invalid Email or Password" });
     }
 
     const token = generateToken(user);
     res.status(200).json({
       message: "Signin Successful",
-      user: user.username,
       token: token,
     });
   } catch (error) {
@@ -114,4 +107,27 @@ const signin = async (req, res) => {
   }
 };
 
-module.exports = { home, signup, verifyMail, signin };
+const getUserDetails = async (req, res) => {
+  try {
+    const userData = req.user;
+    if (!userData) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const { id } = req.params;
+    const user = await User.findById(id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+module.exports = getUserDetails;
+
+module.exports = { home, signup, verifyMail, signin, getUserDetails };

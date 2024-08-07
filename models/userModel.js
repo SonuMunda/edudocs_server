@@ -44,15 +44,21 @@ const userSchema = new Schema({
 });
 
 // Method to generate hashed password
-userSchema.statics.generateHashPassword = function (password) {
-  const saltRounds = 10;
-  try {
-    const hashedPassword = bcrypt.hash(password, saltRounds);
-    return hashedPassword;
-  } catch (err) {
-    console.error(err.message);
+userSchema.pre("save", async function (next) {
+  const user = this;
+
+  if (!user.isModified("password")) {
+    return next();
   }
-};
+
+  try {
+    const saltRounds = await bcrypt.genSalt(10);
+    const hash_password = await bcrypt.hash(user.password, saltRounds);
+    user.password = hash_password;
+  } catch (error) {
+    return next(error);
+  }
+});
 
 //Password match function
 userSchema.methods.comparePassword = async function (password) {
