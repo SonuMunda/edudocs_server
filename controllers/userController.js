@@ -21,10 +21,10 @@ const signup = async (req, res) => {
 
     if (existingUser) {
       if (existingUser.username === username) {
-        return res.status(400).json({ message: "Username already in use" });
+        return res.status(409).json({ message: "Username already in use" });
       }
       if (existingUser.email === email) {
-        return res.status(400).json({ message: "Email already in use" });
+        return res.status(409).json({ message: "Email already in use" });
       }
     }
 
@@ -46,8 +46,6 @@ const signup = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-module.exports = signup;
 
 const verifyMail = async (req, res) => {
   const { id, token } = req.params;
@@ -128,6 +126,58 @@ const getUserDetails = async (req, res) => {
   }
 };
 
-module.exports = getUserDetails;
+const updateUser = async (req, res) => {
+  try {
+    const userData = req.user;
+    if (!userData) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
-module.exports = { home, signup, verifyMail, signin, getUserDetails };
+    const { id } = req.params;
+    const { username, firstName, lastName } = req.body;
+
+    // Check if user exists
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    // Check if the username is provided and different
+    if (username != null && username !== user.username) {
+      const usernameAvailability = await User.findOne({ username: username });
+      if (usernameAvailability) {
+        return res.status(409).json({ message: "Username already in use." });
+      }
+      user.username = username;
+    }
+
+    // Update other fields if provided
+    if (firstName) {
+      user.firstName = firstName;
+    }
+    if (lastName) {
+      user.lastName = lastName;
+    }
+
+    // Save updated user data
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ user: user, message: "Account updated successfully" });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while updating the profile." });
+  }
+};
+
+module.exports = {
+  home,
+  signup,
+  verifyMail,
+  signin,
+  getUserDetails,
+  updateUser,
+};

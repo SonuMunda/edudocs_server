@@ -6,6 +6,7 @@ const {
   verifyMail,
   signin,
   getUserDetails,
+  updateUser,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddlware");
 
@@ -14,5 +15,6 @@ router.post("/auth/signup", signup);
 router.get("/auth/verify/:id/:token", verifyMail);
 router.post("/auth/signin", signin);
 router.get("/auth/user/:id", authMiddleware, getUserDetails);
+router.patch("/auth/user/update/:id", authMiddleware, updateUser);
 
 module.exports = router;

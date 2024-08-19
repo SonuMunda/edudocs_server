@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/user", router);
+app.use("/api/users", router);
 
 const PORT = process.env.PORT || 3000;
 

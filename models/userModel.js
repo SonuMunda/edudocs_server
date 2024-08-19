@@ -13,7 +13,7 @@ const userSchema = new Schema({
   },
   lastName: {
     type: String,
-    required: false,
+    required: true,
   },
   email: {
     type: String,
@@ -22,10 +22,6 @@ const userSchema = new Schema({
   password: {
     type: String,
     required: true,
-  },
-  profile_image: {
-    type: String,
-    required: false,
   },
   emailVerified: {
     type: Boolean,

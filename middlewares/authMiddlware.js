@@ -11,9 +11,8 @@ const authMiddleware = async (req, res, next) => {
   const jwtToken = token.replace("Bearer", "").trim();
 
   try {
-    console.log(jwtToken);
     const isVerified = jwt.verify(jwtToken, process.env.SECRET_KEY);
-    const userData = await User.findById(isVerified.userId).select('-password');
+    const userData = await User.findById(isVerified.userId).select("-password");
 
     if (!userData) {
       return res.status(401).json({ message: "Unauthorized user" });
