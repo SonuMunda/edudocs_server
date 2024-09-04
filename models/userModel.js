@@ -34,7 +34,7 @@ const userSchema = new Schema({
   uploads: [
     {
       type: Schema.Types.ObjectId,
-      ref: "userUploads",
+      ref: "Upload",
     },
   ],
 });

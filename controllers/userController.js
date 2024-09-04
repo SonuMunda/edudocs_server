@@ -1,11 +1,9 @@
+const cloudinary = require("../config/cloudnaryConfig");
 const User = require("../models/userModel");
+const Upload = require("../models/userUpload");
 const generateToken = require("../utils/generateToken");
 const sendVerificationMail = require("../utils/sendVerificationMail");
 const jwt = require("jsonwebtoken");
-
-const home = (req, res) => {
-  res.send("Hello");
-};
 
 const signup = async (req, res) => {
   try {
@@ -51,7 +49,7 @@ const verifyMail = async (req, res) => {
   const { id, token } = req.params;
 
   try {
-    const user = await User.findOne({ _id: id });
+    const user = await User.findById({ _id: id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -61,12 +59,12 @@ const verifyMail = async (req, res) => {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    console.log("Before update:", user);
-
     user.emailVerified = true;
     await user.save();
 
-    return res.status(200).json({ message: "Email verified successfully" });
+    setTimeout(() => {
+      res.redirect("http://localhost:5173/login");
+    }, 2000);
   } catch (error) {
     return res
       .status(500)
@@ -78,7 +76,6 @@ const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log(email, password);
     if (!email || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -173,11 +170,81 @@ const updateUser = async (req, res) => {
   }
 };
 
+const uploadDocumentToCloudinary = async (file) => {
+  try {
+    const responseLink = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: "auto",
+          public_id: file.originalname,
+          filename_override: file.originalname,
+          use_filename: true,
+          unique_filename: false,
+        },
+        (error, result) => {
+          if (error) {
+            console.error(`Error uploading file: ${error.message}`);
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+      stream.end(file.buffer);
+    });
+
+    return responseLink;
+  } catch (error) {
+    console.error(`Unexpected error: ${error.message}`);
+    return null;
+  }
+};
+
+const userDocumentUpload = async (req, res) => {
+  const { id } = req.params;
+  const { category, fileType } = req.body;
+  const file = req.file;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    if (!category) {
+      return res.status(400).json({ message: "Category is required" });
+    }
+
+    const responseLink = await uploadDocumentToCloudinary(file);
+    if (!responseLink) {
+      return res.status(500).json({ message: "Error uploading file" });
+    }
+
+    const upload = new Upload({
+      user: id,
+      fileUrl: responseLink.secure_url,
+      category: category,
+      fileType: fileType,
+    });
+
+    upload.save();
+    console.log(upload);
+    return res.json({ message: "File Uploaded Successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
 module.exports = {
-  home,
   signup,
   verifyMail,
   signin,
   getUserDetails,
   updateUser,
+  userDocumentUpload,
 };

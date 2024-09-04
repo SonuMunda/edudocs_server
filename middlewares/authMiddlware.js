@@ -15,7 +15,7 @@ const authMiddleware = async (req, res, next) => {
     const userData = await User.findById(isVerified.userId).select("-password");
 
     if (!userData) {
-      return res.status(401).json({ message: "Unauthorized user" });
+      return res.status(401).json({ message: "Unauthorized user!!" });
     }
 
     req.user = userData;
