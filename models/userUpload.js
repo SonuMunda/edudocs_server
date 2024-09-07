@@ -15,6 +15,22 @@ const uploadSchema = new Schema({
     type: String,
     required: true,
   },
+  university: {
+    type: String,
+    required: true,
+  },
+  course: {
+    type: String,
+    required: true,
+  },
+  session: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
   fileType: {
     type: String,
     required: true,
@@ -24,8 +40,6 @@ const uploadSchema = new Schema({
     default: Date.now,
   },
 });
-
-
 
 const Upload = mongoose.model("Upload", uploadSchema);
 module.exports = Upload;

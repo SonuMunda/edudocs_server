@@ -1,3 +1,4 @@
+const { OK } = require("zod");
 const cloudinary = require("../config/cloudnaryConfig");
 const User = require("../models/userModel");
 const Upload = require("../models/userUpload");
@@ -178,7 +179,7 @@ const uploadDocumentToCloudinary = async (file) => {
           resource_type: "auto",
           public_id: file.originalname,
           filename_override: file.originalname,
-          use_filename: true,
+          use_filename: false,
           unique_filename: false,
         },
         (error, result) => {
@@ -202,7 +203,8 @@ const uploadDocumentToCloudinary = async (file) => {
 
 const userDocumentUpload = async (req, res) => {
   const { id } = req.params;
-  const { category, fileType } = req.body;
+  const { category, university, course, session, description, fileType } =
+    req.body;
   const file = req.file;
 
   try {
@@ -214,9 +216,20 @@ const userDocumentUpload = async (req, res) => {
     if (!file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-
     if (!category) {
       return res.status(400).json({ message: "Category is required" });
+    }
+    if (!university) {
+      return res.status(400).json({ message: "University is required" });
+    }
+    if (!course) {
+      return res.status(400).json({ message: "Course is required" });
+    }
+    if (!session) {
+      return res.status(400).json({ message: "Session is required" });
+    }
+    if (!description) {
+      return res.status(400).json({ message: "Description is required" });
     }
 
     const responseLink = await uploadDocumentToCloudinary(file);
@@ -224,18 +237,28 @@ const userDocumentUpload = async (req, res) => {
       return res.status(500).json({ message: "Error uploading file" });
     }
 
-    const upload = new Upload({
-      user: id,
+    const upload = {
       fileUrl: responseLink.secure_url,
-      category: category,
-      fileType: fileType,
-    });
+      category,
+      university,
+      course,
+      session,
+      description,
+      fileType,
+    };
 
-    upload.save();
-    console.log(upload);
-    return res.json({ message: "File Uploaded Successfully" });
+    if (!user.documents) {
+      user.documents = [];
+    }
+
+    user.documents.push(upload);
+    await user.save();
+
+    return res
+      .status(600)
+      .json({ message: "File uploaded successfully", upload });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error", error });
   }
 };
