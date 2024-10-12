@@ -2,12 +2,11 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const uploadSchema = new Schema({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
+  url: {
+    type: String,
     required: true,
   },
-  fileUrl: {
+  title: {
     type: String,
     required: true,
   },
@@ -33,6 +32,19 @@ const uploadSchema = new Schema({
   },
   fileType: {
     type: String,
+    required: true,
+  },
+  likes: {
+    type: Number,
+    required: false,
+  },
+  votes: {
+    type: Number,
+    required: false,
+  },
+  uploadedBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
     required: true,
   },
   uploadedAt: {

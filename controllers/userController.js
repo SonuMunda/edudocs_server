@@ -5,6 +5,8 @@ const Upload = require("../models/userUpload");
 const generateToken = require("../utils/generateToken");
 const sendVerificationMail = require("../utils/sendVerificationMail");
 const jwt = require("jsonwebtoken");
+const { response } = require("express");
+const upload = require("../config/multerConfig");
 
 const signup = async (req, res) => {
   try {
@@ -111,6 +113,7 @@ const getUserDetails = async (req, res) => {
     }
 
     const { id } = req.params;
+
     const user = await User.findById(id).select("-password");
 
     if (!user) {
@@ -203,8 +206,15 @@ const uploadDocumentToCloudinary = async (file) => {
 
 const userDocumentUpload = async (req, res) => {
   const { id } = req.params;
-  const { category, university, course, session, description, fileType } =
-    req.body;
+  const {
+    title,
+    category,
+    university,
+    course,
+    session,
+    description,
+    fileType,
+  } = req.body;
   const file = req.file;
 
   try {
@@ -216,20 +226,9 @@ const userDocumentUpload = async (req, res) => {
     if (!file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-    if (!category) {
-      return res.status(400).json({ message: "Category is required" });
-    }
-    if (!university) {
-      return res.status(400).json({ message: "University is required" });
-    }
-    if (!course) {
-      return res.status(400).json({ message: "Course is required" });
-    }
-    if (!session) {
-      return res.status(400).json({ message: "Session is required" });
-    }
-    if (!description) {
-      return res.status(400).json({ message: "Description is required" });
+
+    if (!category || !university || !course || !session || !description) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const responseLink = await uploadDocumentToCloudinary(file);
@@ -237,29 +236,61 @@ const userDocumentUpload = async (req, res) => {
       return res.status(500).json({ message: "Error uploading file" });
     }
 
-    const upload = {
-      fileUrl: responseLink.secure_url,
+    const document = new Upload({
+      url: responseLink.secure_url,
+      title,
       category,
       university,
       course,
       session,
       description,
       fileType,
-    };
+      uploadedBy: id,
+    });
 
-    if (!user.documents) {
-      user.documents = [];
-    }
-
-    user.documents.push(upload);
+    await document.save();
+    user.uploads.push(document._id);
     await user.save();
 
-    return res
-      .status(600)
-      .json({ message: "File uploaded successfully", upload });
+    return res.status(201).json({ message: "File Uploaded", document });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+const fetchUserUploads = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const documents = await Upload.find({ uploadedBy: userId });
+
+    if (!documents || documents.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No documents found for this user" });
+    }
+
+    return res.status(200).json(documents);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+const fetchFileDetailsById = async (req, res) => {
+  const { fileId } = req.params;
+
+  try {
+    const details = await Upload.findById({ _id: fileId });
+
+    if (!details) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    return res.status(200).json({ data: details });
+  } catch (error) {
+    console.error(error);
   }
 };
 
@@ -270,4 +301,6 @@ module.exports = {
   getUserDetails,
   updateUser,
   userDocumentUpload,
+  fetchUserUploads,
+  fetchFileDetailsById,
 };

@@ -31,12 +31,7 @@ const userSchema = new Schema({
     type: Date,
     default: Date.now,
   },
-  uploads: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Upload",
-    },
-  ],
+  uploads: [{ type: Schema.Types.ObjectId, ref: "Upload" }],
 });
 
 // Method to generate hashed password

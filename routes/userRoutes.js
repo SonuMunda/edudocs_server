@@ -7,6 +7,8 @@ const {
   getUserDetails,
   updateUser,
   userDocumentUpload,
+  fetchUserUploads,
+  fetchFileDetailsById,
 } = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddlware");
 const upload = require("../config/multerConfig");
@@ -22,5 +24,7 @@ router.post(
   upload.single("file"),
   userDocumentUpload
 );
+router.get("/user/uploads/:userId", fetchUserUploads);
+router.get("/document/:fileId", fetchFileDetailsById);
 
 module.exports = router;
